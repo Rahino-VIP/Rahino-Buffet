@@ -32,21 +32,27 @@
 </head>
 <body>
 
+    <!-- صفحه لاگین دوگانه و مدیریت -->
     <div class="container" id="loginScreen">
         <div class="header"><span>☕</span><h2 style="color:var(--text);">بوفه راهینو</h2><p style="color:var(--green); font-size:13px; font-weight:bold;">سریع، جذاب، تخفیف‌دار</p></div>
         
         <div class="toggle-box">
             <div class="toggle-btn active" id="tabStudent" onclick="switchTab('student')">دانش‌آموز</div>
-            <div class="toggle-btn" id="tabCaretaker" onclick="switchTab('caretaker')">مراقب</div>
+            <div class="toggle-btn" id="tabCaretaker" onclick="switchTab('caretaker')">صندوق‌دار</div>
             <div class="toggle-btn" id="tabAdmin" onclick="switchTab('admin')">👑 مدیریت</div>
         </div>
 
         <div id="studentInputs">
             <input type="text" id="userId" placeholder="نام کاربری (آیدی بله)" style="direction: ltr;">
         </div>
-        <input type="password" id="userPin" placeholder="رمز عبور (پین ۳ رقمی)" style="direction: ltr; letter-spacing: 5px;">
         
-        <button class="btn" id="loginBtn" onclick="login()">ورود به بوفه</button>
+        <div id="caretakerInputs" style="display: none;">
+            <input type="password" id="adminPass" placeholder="🔑 رمز عبور پرسنل/مدیریت" style="direction: ltr;">
+        </div>
+        
+        <input type="password" id="userPin" placeholder="پین ۳ رقمی دانش‌آموز" style="direction: ltr; letter-spacing: 5px;">
+        
+        <button class="btn" id="loginBtn" onclick="login()">ورود</button>
     </div>
 
     <div class="container" id="menuScreen">
