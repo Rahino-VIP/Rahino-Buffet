@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوفه هوشمند راهینو</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+    <style>
+        :root { --pink: #d97b7b; --bg: #f4f0ec; --text: #2c3e50; --white: #fff; --green: #7ca881; }
+        * { box-sizing: border-box; font-family: 'Vazirmatn', sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); padding: 20px; padding-bottom: 100px;}
+        .container { background: var(--white); border-radius: 24px; padding: 25px; width: 100%; max-width: 450px; margin: 0 auto; box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
+        .header { text-align: center; margin-bottom: 25px; }
+        .header span { font-size: 55px; display: block; margin-bottom: 10px;}
+        input { width: 100%; padding: 15px; border-radius: 14px; border: 2px solid #e5eee6; background: #fafbfc; outline: none; margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 15px;}
+        input:focus { border-color: var(--pink); }
+        .btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; color: var(--white); background: var(--pink); margin-bottom: 10px; transition: 0.2s;}
+        .btn:active { transform: scale(0.98); }
+        .toggle-box { display: flex; background: #e5eee6; border-radius: 14px; margin-bottom: 20px; overflow: hidden;}
+        .toggle-btn { flex: 1; padding: 12px; text-align: center; font-weight: bold; cursor: pointer; transition: 0.3s; color: var(--text); }
+        .toggle-btn.active { background: var(--green); color: white; }
+        .wallet-card { background: linear-gradient(135deg, var(--green), #5a8a5f); color: white; padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 20px;}
+        .category-title { background: #fdf3e1; color: #d08c1d; padding: 8px 15px; border-radius: 10px; margin: 15px 0 10px 0; font-weight: bold; }
+        .menu-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 2px solid #f9f9f9; border-radius: 14px; margin-bottom: 10px; background: #fff;}
+        .qty-control { display: flex; align-items: center; gap: 12px; background: #f4f0ec; padding: 5px; border-radius: 20px;}
+        .qty-btn { width: 32px; height: 32px; border-radius: 50%; border: none; background: white; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size:18px; color: var(--pink);}
+        .cart-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px; background: var(--text); color: white; padding: 15px 20px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: none; z-index: 100;}
+        .cart-bar button { background: var(--pink); border: none; padding: 10px 20px; color: white; border-radius: 12px; font-weight: bold; cursor: pointer;}
+        #menuScreen, #checkoutScreen { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="loginScreen">
+        <div class="header"><span>☕</span><h2 style="color:var(--text);">بوفه راهینو</h2><p style="color:var(--green); font-size:13px; font-weight:bold;">سریع، جذاب، تخفیف‌دار</p></div>
+        
+        <div class="toggle-box">
+            <div class="toggle-btn active" id="tabStudent" onclick="switchTab('student')">ورود دانش‌آموز</div>
+            <div class="toggle-btn" id="tabCaretaker" onclick="switchTab('caretaker')">ثبت آفلاین (مراقب)</div>
+        </div>
+
+        <div id="studentInputs">
+            <input type="text" id="userId" placeholder="نام کاربری (آیدی بله)" style="direction: ltr;">
+        </div>
+        <input type="password" id="userPin" placeholder="رمز عبور (پین ۳ رقمی)" style="direction: ltr; letter-spacing: 5px;">
+        
+        <button class="btn" id="loginBtn" onclick="login()">ورود به بوفه</button>
+    </div>
+
+    <div class="container" id="menuScreen">
+        <div class="header" style="margin-bottom: 10px;"><h2 id="welcomeName"></h2></div>
+        <div class="wallet-card"><p style="font-size: 13px; opacity: 0.9;">موجودی قابل استفاده</p><h2 id="walletBalance">0 تومان</h2></div>
+        <div id="menuContainer"></div>
+    </div>
+
+    <div class="cart-bar" id="cartBar">
+        <div>مبلغ کل: <strong id="cartTotalText">0</strong> تومان</div>
+        <button onclick="goToCheckout()">تسویه حساب</button>
+    </div>
+
+    <div class="container" id="checkoutScreen">
+        <div class="header"><span>🧾</span><h2>فاکتور نهایی</h2></div>
+        <div id="checkoutItems" style="margin-bottom: 20px; font-size: 14px; background:#f9f9f9; padding:15px; border-radius:15px;"></div>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+            <input type="text" id="discountCode" placeholder="کد تخفیف راهینو" style="margin: 0; text-align:right;">
+            <button class="btn" style="width: auto; margin: 0; background: var(--text);" onclick="applyDiscount()">اعمال</button>
+        </div>
+        <p id="discountMsg" style="font-size: 13px; color: var(--green); margin-bottom: 15px; text-align: center; font-weight: bold;"></p>
+        
+        <div style="border-top: 2px dashed #ddd; padding-top: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; font-weight: 900; font-size: 19px; color:var(--text);">
+            <span>پرداختی نهایی:</span><span id="finalPayText">0</span>
+        </div>
+        <button class="btn" id="submitOrderBtn" onclick="submitFinalOrder()">✅ تایید و کسر از کیف پول</button>
+        <button class="btn" style="background: transparent; color: var(--text); border: 2px solid #eee;" onclick="backToMenu()">❌ ویرایش سفارش</button>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "لینک_دیپلوی_گوگل_اسکریپت_را_اینجا_قرار_دهید"; 
+
+        let isCaretakerMode = false; let currentUser = ""; let wallet = 0; let menuData = []; let cart = {}; let finalDiscount = 0;
+
+        async function apiCall(actionName, dataObj) {
+            let res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: actionName, data: dataObj }) });
+            return await res.json();
+        }
+
+        function switchTab(mode) {
+            isCaretakerMode = (mode === 'caretaker');
+            document.getElementById('tabStudent').className = isCaretakerMode ? 'toggle-btn' : 'toggle-btn active';
+            document.getElementById('tabCaretaker').className = isCaretakerMode ? 'toggle-btn active' : 'toggle-btn';
+            document.getElementById('studentInputs').style.display = isCaretakerMode ? 'none' : 'block';
+        }
+
+        function login() {
+            let id = document.getElementById("userId").value; let pin = document.getElementById("userPin").value;
+            if(!isCaretakerMode && !id) return alert("آیدی را وارد کنید");
+            if(!pin) return alert("پین‌کد الزامی است");
+            
+            let btn = document.getElementById("loginBtn"); btn.innerText = "در حال بررسی..."; btn.disabled = true;
+            
+            apiCall("login", {username: id, pin: pin, isCaretaker: isCaretakerMode}).then(res => {
+                if(res.status === "Success") {
+                    currentUser = res.id; wallet = res.wallet;
+                    document.getElementById("welcomeName").innerText = "سفارش برای: " + res.name;
+                    document.getElementById("walletBalance").innerText = wallet.toLocaleString() + " تومان";
+                    document.getElementById("loginScreen").style.display = "none";
+                    document.getElementById("menuScreen").style.display = "block";
+                    loadMenu();
+                } else { alert("اطلاعات ورود اشتباه است."); btn.innerText = "ورود به بوفه"; btn.disabled = false; }
+            });
+        }
+
+        function loadMenu() {
+            document.getElementById("menuContainer").innerHTML = "<p style='text-align:center;'>در حال آماده‌سازی منو...</p>";
+            apiCall("getMenu", {}).then(res => { if(res.status === "Success") { menuData = res.menu; renderMenu(); } });
+        }
+
+        function renderMenu() {
+            let container = document.getElementById("menuContainer"); container.innerHTML = "";
+            let categories = [...new Set(menuData.map(item => item.category))];
+            
+            categories.forEach(cat => {
+                let catDiv = document.createElement("div"); catDiv.innerHTML = `<div class="category-title">${cat}</div>`;
+                menuData.filter(i => i.category === cat).forEach(item => {
+                    let id = item.code;
+                    catDiv.innerHTML += `
+                        <div class="menu-item">
+                            <div style="line-height:1.8;"><strong>${item.name}</strong><br><small style="color:var(--pink); font-weight:bold;">${item.price.toLocaleString()} تومان</small></div>
+                            <div class="qty-control">
+                                <button class="qty-btn" onclick="updateCart('${id}', '${item.name}', '${item.category}', ${item.price}, 1)">+</button>
+                                <span id="qty_${id}" style="font-weight:bold; width:20px; text-align:center;">0</span>
+                                <button class="qty-btn" onclick="updateCart('${id}', '${item.name}', '${item.category}', ${item.price}, -1)">-</button>
+                            </div>
+                        </div>`;
+                });
+                container.appendChild(catDiv);
+            });
+        }
+
+        function updateCart(id, name, cat, price, change) {
+            if(!cart[id]) cart[id] = {code: id, name: name, category: cat, price: price, qty: 0};
+            cart[id].qty += change;
+            if(cart[id].qty <= 0) delete cart[id];
+            else document.getElementById("qty_" + id).innerText = cart[id].qty;
+            if(!cart[id]) document.getElementById("qty_" + id).innerText = "0";
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            let total = 0; let count = 0;
+            Object.values(cart).forEach(item => { total += (item.price * item.qty); count += item.qty; });
+            document.getElementById("cartTotalText").innerText = total.toLocaleString();
+            document.getElementById("cartBar").style.display = count > 0 ? "flex" : "none";
+        }
+
+        function goToCheckout() {
+            document.getElementById("menuScreen").style.display = "none"; document.getElementById("cartBar").style.display = "none"; document.getElementById("checkoutScreen").style.display = "block";
+            let itemsHtml = ""; let total = 0;
+            Object.values(cart).forEach(item => {
+                itemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid #eee; padding-bottom:5px;"><span><strong>${item.qty}</strong> عدد ${item.name}</span><span style="color:var(--text); font-weight:bold;">${(item.price * item.qty).toLocaleString()}</span></div>`;
+                total += (item.price * item.qty);
+            });
+            document.getElementById("checkoutItems").innerHTML = itemsHtml;
+            document.getElementById("finalPayText").innerText = total.toLocaleString() + " تومان";
+            finalDiscount = 0; document.getElementById("discountMsg").innerText = ""; document.getElementById("discountCode").value = "";
+        }
+
+        function backToMenu() { document.getElementById("checkoutScreen").style.display = "none"; document.getElementById("menuScreen").style.display = "block"; updateCartUI(); }
+
+        function applyDiscount() {
+            let code = document.getElementById("discountCode").value; if(!code) return;
+            document.getElementById("discountMsg").style.color = "var(--text)"; document.getElementById("discountMsg").innerText = "در حال بررسی کد...";
+            
+            apiCall("checkDiscount", {code: code, cart: Object.values(cart)}).then(res => {
+                if(res.status === "Valid") {
+                    finalDiscount = res.discountAmount; let total = Object.values(cart).reduce((sum, i) => sum + (i.price * i.qty), 0);
+                    document.getElementById("discountMsg").style.color = "var(--green)"; document.getElementById("discountMsg").innerText = "✅ " + finalDiscount.toLocaleString() + " تومان تخفیف اعمال شد!";
+                    document.getElementById("finalPayText").innerText = Math.max(0, total - finalDiscount).toLocaleString() + " تومان";
+                } else { document.getElementById("discountMsg").style.color = "var(--pink)"; document.getElementById("discountMsg").innerText = "❌ " + res.message; finalDiscount = 0; }
+            });
+        }
+
+        function submitFinalOrder() {
+            let btn = document.getElementById("submitOrderBtn"); btn.innerText = "در حال ارتباط با انبار..."; btn.disabled = true;
+            let code = finalDiscount > 0 ? document.getElementById("discountCode").value : "";
+            
+            apiCall("submitOrder", {userId: currentUser, cart: Object.values(cart), discountCode: code}).then(res => {
+                if(res.status === "Success") {
+                    alert("✅ نوش جان! سفارش ثبت شد.\nموجودی جدید حساب: " + res.newWallet.toLocaleString() + " تومان");
+                    location.reload(); 
+                } else { alert("❌ " + res.message); btn.innerText = "✅ تایید و کسر از کیف پول"; btn.disabled = false; }
+            });
+        }
+    </script>
+</body>
+</html>
