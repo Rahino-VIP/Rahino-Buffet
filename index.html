@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,8 +36,9 @@
         <div class="header"><span>☕</span><h2 style="color:var(--text);">بوفه راهینو</h2><p style="color:var(--green); font-size:13px; font-weight:bold;">سریع، جذاب، تخفیف‌دار</p></div>
         
         <div class="toggle-box">
-            <div class="toggle-btn active" id="tabStudent" onclick="switchTab('student')">ورود دانش‌آموز</div>
-            <div class="toggle-btn" id="tabCaretaker" onclick="switchTab('caretaker')">ثبت آفلاین (مراقب)</div>
+            <div class="toggle-btn active" id="tabStudent" onclick="switchTab('student')">دانش‌آموز</div>
+            <div class="toggle-btn" id="tabCaretaker" onclick="switchTab('caretaker')">مراقب</div>
+            <div class="toggle-btn" id="tabAdmin" onclick="switchTab('admin')">👑 مدیریت</div>
         </div>
 
         <div id="studentInputs">
@@ -75,6 +77,43 @@
         <button class="btn" style="background: transparent; color: var(--text); border: 2px solid #eee;" onclick="backToMenu()">❌ ویرایش سفارش</button>
     </div>
 
+    <!-- پنل مدیریت (داشبورد) -->
+    <div class="container" id="adminScreen" style="display: none; max-width: 500px;">
+        <div class="header"><span>👑</span><h2>اتاق فرمان راهینو</h2></div>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <div style="flex: 1; background: var(--pink); color: white; padding: 15px; border-radius: 15px; text-align: center;">
+                <small>فروش امروز</small>
+                <h3 id="adminTodaySales" style="margin-top: 5px;">0</h3>
+            </div>
+            <div style="flex: 1; background: var(--green); color: white; padding: 15px; border-radius: 15px; text-align: center;">
+                <small>هشدار انبار</small>
+                <h3 id="adminLowStock" style="margin-top: 5px;">0 کالا</h3>
+            </div>
+        </div>
+
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #eee;">
+            <h4 style="text-align: center; margin-bottom: 10px; color: var(--text);">📊 نمودار فروش (۷ روز گذشته)</h4>
+            <canvas id="salesChart"></canvas>
+        </div>
+
+        <div style="background: #fffdf5; padding: 15px; border-radius: 15px; border: 1px solid #f2e3c6; margin-bottom: 20px;">
+            <h4 style="text-align: center; margin-bottom: 15px; color: #d08c1d;">🏆 برترین خریداران بوفه</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: center;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #f2e3c6; color: #d08c1d;">
+                        <th style="padding: 10px;">رتبه</th>
+                        <th style="padding: 10px;">نام دانش‌آموز</th>
+                        <th style="padding: 10px;">مجموع خرید</th>
+                    </tr>
+                </thead>
+                <tbody id="topBuyersTable"></tbody>
+            </table>
+        </div>
+        
+        <button class="btn" onclick="location.reload()">خروج از پنل مدیریت</button>
+    </div>
+
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6KpJsSxRtOv_W9n8cF00ZnX0ikXzBn8ONvvzOfZUCmQ48XcH0JiGjVB94kgJGmAGkkg/exec"; 
 
@@ -85,32 +124,67 @@
             return await res.json();
         }
 
+        let salesChartObj = null;
+
         function switchTab(mode) {
-            isCaretakerMode = (mode === 'caretaker');
-            document.getElementById('tabStudent').className = isCaretakerMode ? 'toggle-btn' : 'toggle-btn active';
-            document.getElementById('tabCaretaker').className = isCaretakerMode ? 'toggle-btn active' : 'toggle-btn';
-            document.getElementById('studentInputs').style.display = isCaretakerMode ? 'none' : 'block';
+            document.getElementById('tabStudent').className = (mode === 'student') ? 'toggle-btn active' : 'toggle-btn';
+            document.getElementById('tabCaretaker').className = (mode === 'caretaker') ? 'toggle-btn active' : 'toggle-btn';
+            document.getElementById('tabAdmin').className = (mode === 'admin') ? 'toggle-btn active' : 'toggle-btn';
+            
+            document.getElementById('studentInputs').style.display = (mode === 'student') ? 'block' : 'none';
+            document.getElementById('caretakerInputs').style.display = (mode === 'student') ? 'none' : 'block';
+            document.getElementById('userPin').style.display = (mode === 'admin') ? 'none' : 'block';
         }
 
         function login() {
-            let id = document.getElementById("userId").value; let pin = document.getElementById("userPin").value;
-            if(!isCaretakerMode && !id) return alert("آیدی را وارد کنید");
-            if(!pin) return alert("پین‌کد الزامی است");
+            let mode = document.querySelector('.toggle-btn.active').id.replace('tab', '').toLowerCase();
+            let id = document.getElementById("userId").value; 
+            let pin = document.getElementById("userPin").value;
+            let aPass = document.getElementById("adminPass").value; 
+
+            if(mode === 'student' && (!id || !pin)) return alert("آیدی و پین‌کد الزامی است");
+            if(mode === 'caretaker' && (!aPass || !pin)) return alert("رمز پرسنل و پین‌کد الزامی است");
+            if(mode === 'admin' && !aPass) return alert("رمز مدیریت الزامی است");
             
             let btn = document.getElementById("loginBtn"); btn.innerText = "در حال بررسی..."; btn.disabled = true;
             
-            apiCall("login", {username: id, pin: pin, isCaretaker: isCaretakerMode}).then(res => {
-                if(res.status === "Success") {
-                    currentUser = res.id; wallet = res.wallet;
-                    document.getElementById("welcomeName").innerText = "سفارش برای: " + res.name;
-                    document.getElementById("walletBalance").innerText = wallet.toLocaleString() + " تومان";
-                    document.getElementById("loginScreen").style.display = "none";
-                    document.getElementById("menuScreen").style.display = "block";
-                    loadMenu();
-                } else { alert("اطلاعات ورود اشتباه است."); btn.innerText = "ورود به بوفه"; btn.disabled = false; }
-            });
-        }
+            if(mode === 'admin') {
+                apiCall("getAdminData", {adminPass: aPass}).then(res => {
+                    if(res.status === "Success") {
+                        document.getElementById("loginScreen").style.display = "none";
+                        document.getElementById("adminScreen").style.display = "block";
+                        
+                        document.getElementById("adminTodaySales").innerText = res.totalToday.toLocaleString() + " T";
+                        document.getElementById("adminLowStock").innerText = res.lowStockCount + " کالا";
+                        
+                        let tbody = document.getElementById("topBuyersTable"); tbody.innerHTML = "";
+                        let medals = ["🥇", "🥈", "🥉", "۴", "۵"];
+                        res.topBuyers.forEach((b, index) => {
+                            tbody.innerHTML += `<tr style="border-bottom:1px solid #eee;">
+                                <td style="padding:10px;">${medals[index]}</td>
+                                <td style="padding:10px; font-weight:bold;">${b.name}</td>
+                                <td style="padding:10px; color:var(--green);">${b.total.toLocaleString()}</td>
+                            </tr>`;
+                        });
 
+                        let ctx = document.getElementById('salesChart').getContext('2d');
+                        if(salesChartObj) salesChartObj.destroy();
+                        salesChartObj = new Chart(ctx, { type: 'bar', data: { labels: res.chart.labels, datasets: [{ label: 'فروش (تومان)', data: res.chart.data, backgroundColor: '#d97b7b', borderRadius: 8 }] }, options: { responsive: true, scales: { y: { beginAtZero: true } } } });
+                    } else { alert(res.message); btn.innerText = "ورود"; btn.disabled = false; }
+                });
+            } else {
+                apiCall("login", {username: id, pin: pin, isCaretaker: (mode === 'caretaker'), adminPass: aPass}).then(res => {
+                    if(res.status === "Success") {
+                        currentUser = res.id; wallet = res.wallet;
+                        document.getElementById("welcomeName").innerText = "سفارش برای: " + res.name;
+                        document.getElementById("walletBalance").innerText = wallet.toLocaleString() + " تومان";
+                        document.getElementById("loginScreen").style.display = "none";
+                        document.getElementById("menuScreen").style.display = "block";
+                        loadMenu();
+                    } else { alert(res.message || "اطلاعات ورود اشتباه است."); btn.innerText = "ورود"; btn.disabled = false; }
+                });
+            }
+        }
         function loadMenu() {
             document.getElementById("menuContainer").innerHTML = "<p style='text-align:center;'>در حال آماده‌سازی منو...</p>";
             apiCall("getMenu", {}).then(res => { if(res.status === "Success") { menuData = res.menu; renderMenu(); } });
